@@ -1,0 +1,1583 @@
+/* ベーススタイル */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
+}
+
+/* PDF出力最適化スタイル（重要: PDFキャプチャ用） */
+@media print {
+  .excel-wbs-view {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  .gantt-table-container {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  
+  .gantt-header, .gantt-body {
+    overflow: visible !important;
+  }
+
+  /* PDF出力時の色塗りを確実に表示 */
+  div[style*="background-color"],
+  div[style*="backgroundColor"] {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* PDF出力用の特別なスタイル */
+.pdf-export-mode {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.pdf-export-mode .gantt-table-container {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  border: 1px solid #ddd;
+}
+
+.pdf-export-mode .gantt-header,
+.pdf-export-mode .gantt-body,
+.pdf-export-mode .gantt-left-columns,
+.pdf-export-mode .gantt-timeline {
+  overflow: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.pdf-export-mode .gantt-left-columns {
+  position: static !important;
+  z-index: auto !important;
+  box-shadow: none !important;
+}
+
+.pdf-export-mode .gantt-header {
+  position: static !important;
+  z-index: auto !important;
+}
+
+/* PDF出力時の背景色を強制表示 */
+.pdf-export-mode div[style*="background"],
+.pdf-export-mode div[style*="backgroundColor"] {
+  -webkit-print-color-adjust: exact !important;
+  color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* フォントの明確化（PDF用） */
+.pdf-export-mode,
+.pdf-export-mode * {
+  font-family: Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* アプリケーション全体レイアウト */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* サイドバー */
+.sidebar {
+  background-color: #1976d2;
+  color: white;
+  transition: width 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1000;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-open {
+  width: 250px;
+}
+
+.sidebar-closed {
+  width: 65px;
+}
+
+.sidebar-header {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 70px;
+}
+
+.app-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.2s;
+  border-radius: 0;
+  margin: 0 0.5rem;
+  border-radius: 6px;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.nav-item.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: 600;
+}
+
+.nav-icon {
+  font-size: 1.2rem;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-label {
+  margin-left: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-closed .nav-label {
+  opacity: 0;
+}
+
+/* メインコンテンツ */
+.main-content {
+  flex: 1;
+  transition: margin-left 0.3s ease;
+  padding: 1rem 1rem 1rem 1.5rem;
+  overflow-x: auto;
+}
+
+.content-with-sidebar {
+  margin-left: 250px;
+}
+
+.content-full {
+  margin-left: 60px;
+}
+
+/* ページヘッダー */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.page-header h2 {
+  color: #333;
+  font-size: 2rem;
+}
+
+/* ボタンスタイル */
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: #1976d2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #1565c0;
+}
+
+.btn-secondary {
+  background-color: #757575;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #616161;
+}
+
+.btn-thirdry {
+  color: #616161;
+}
+
+.btn-thirdry:hover {
+  color: #1565c0;
+}
+
+.btn-danger {
+  background-color: #d32f2f;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c62828;
+}
+
+.btn-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* モーダル */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h3 {
+  margin-bottom: 1.5rem;
+  color: #333;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+}
+
+/* フォーム */
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+  flex: 1;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* メンバー選択エリア */
+.member-selection {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 0.5rem;
+  background: white;
+}
+
+.member-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.member-item:last-child {
+  border-bottom: none;
+}
+
+.member-checkbox {
+  margin-top: 0.25rem;
+}
+
+.member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name {
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.member-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.member-controls input,
+.member-controls select {
+  padding: 0.25rem;
+  font-size: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.member-controls .role-input {
+  width: 120px;
+}
+
+.member-controls .allocation-input {
+  width: 80px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.checkbox-label .completed {
+  text-decoration: line-through;
+  color: #666;
+}
+
+/* テーブル（共通） */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* ステータス表示 */
+.status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status.active {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.status.inactive {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status.not_started {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.status.in_progress {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.status.completed {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+/* 読み込み・エラー状態 */
+.loading, .error, .empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #666;
+}
+
+.error {
+  color: #d32f2f;
+}
+
+/* プロジェクト詳細タブ */
+.project-info-tab {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.info-section h3 {
+  margin-bottom: 1.5rem;
+  color: #1976d2;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* === 基本情報の"テーブル風UI"専用スタイル === */
+.info-table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border: 1px solid #e0e0e0;
+}
+
+.info-table table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.info-table tr:nth-child(even) td {
+  background: #fcfcfc;
+}
+
+.info-table th {
+  width: 220px;
+  background: #f8f9fa;
+  color: #333;
+  font-weight: 600;
+  border-right: 1px solid #eee;
+  white-space: nowrap;
+}
+
+.info-table td {
+  color: #555;
+}
+
+.info-table .value-mono {
+  font-variant-numeric: tabular-nums;
+  color: #444;
+}
+
+.info-table .inline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.info-table .inline-badge small {
+  color: #777;
+  font-weight: 400;
+}
+
+/* 旧レイアウトのgridは残しても実害なしだが未使用 */
+.info-grid { display: none; }
+
+/* メンバー管理 */
+.members-tab {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.members-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 1rem;
+}
+
+.members-header h3 {
+  color: #1976d2;
+  margin: 0;
+}
+
+.members-table {
+  margin-top: 1rem;
+}
+
+/* WBSビュー */
+.wbs-view {
+  background: white;
+  border-radius: 0;
+  padding: 1.5rem;
+  box-shadow: none;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.wbs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 1rem;
+}
+
+.wbs-info {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.task-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.task-main {
+  padding: 1rem;
+  background: white;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.task-name {
+  font-size: 1.1rem;
+  color: #1976d2;
+  cursor: pointer;
+  margin: 0;
+}
+
+.task-name:hover {
+  text-decoration: underline;
+}
+
+.milestone {
+  margin-left: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.task-meta {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.task-schedule {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.status-select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* 進捗バー */
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.8rem;
+  color: #666;
+  min-width: 40px;
+}
+
+/* チェックリスト */
+.checklist-container {
+  background: #f8f9fa;
+  padding: 1rem;
+  margin-left: 2rem;
+  border-left: 3px solid #1976d2;
+}
+
+.checklist-items {
+  margin: 1rem 0;
+}
+
+.checklist-item {
+  margin-bottom: 0.5rem;
+}
+
+.add-checklist-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.add-checklist-form input {
+  flex: 1;
+}
+
+/* PERT図の追加スタイル */
+
+/* PERT図全体 */
+.pert-chart {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.pert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pert-header h3 {
+  margin: 0;
+  color: #1976d2;
+}
+
+/* PERTアクション（タスク追加ボタン） */
+.pert-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* コントロールパネル */
+.pert-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dependency-type-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dependency-type-selector label {
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.dependency-type-selector select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+}
+
+/* 凡例 */
+.pert-legend {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.legend-info {
+  margin-left: 1rem;
+  color: #666;
+}
+
+.legend-info small {
+  font-size: 0.8rem;
+}
+
+/* PERT図コンテナ */
+.pert-container {
+  height: 600px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  position: relative;
+  background: #fafafa;
+}
+
+/* タスクノードスタイル */
+.task-node {
+  background: white;
+  border: 2px solid #1976d2;
+  border-radius: 8px;
+  padding: 0.75rem;
+  min-width: 220px;
+  max-width: 250px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.task-node:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.task-node-header {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 0.25rem;
+}
+
+.task-node-body div {
+  margin-bottom: 0.25rem;
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.task-node .milestone {
+  margin-left: 0.5rem;
+  font-size: 1rem;
+}
+
+/* React Flow ハンドルカスタマイズ（改良版） */
+.react-flow__node {
+  cursor: grab;
+}
+
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+.react-flow__handle {
+  width: 14px !important;
+  height: 14px !important;
+  background: #1976d2 !important;
+  border: 2px solid white !important;
+  border-radius: 50% !important;
+  cursor: crosshair !important;
+  transition: all 0.2s ease !important;
+  opacity: 1 !important;
+  z-index: 10 !important;
+}
+
+.react-flow__handle:hover {
+  width: 18px !important;
+  height: 18px !important;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.3) !important;
+  transform: scale(1.1) !important;
+}
+
+.react-flow__handle-connecting {
+  background: #ff4444 !important;
+  box-shadow: 0 0 0 4px rgba(255, 68, 68, 0.4) !important;
+}
+
+/* ハンドルが接続可能な状態の視覚的フィードバック */
+.react-flow__handle.react-flow__handle-valid {
+  background: #4CAF50 !important;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.4) !important;
+}
+
+.react-flow__handle.react-flow__handle-invalid {
+  background: #f44336 !important;
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.4) !important;
+}
+
+.react-flow__edge {
+  cursor: pointer;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3px !important;
+}
+
+.react-flow__edge-label {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  color: #333;
+}
+
+/* コントロールパネル */
+.react-flow__controls {
+  bottom: 20px !important;
+  left: 20px !important;
+}
+
+.react-flow__controls-button {
+  background: white !important;
+  border: 1px solid #ddd !important;
+  color: #333 !important;
+  font-size: 16px !important;
+}
+
+.react-flow__controls-button:hover {
+  background: #f5f5f5 !important;
+}
+
+/* ミニマップ */
+.react-flow__minimap {
+  background: white !important;
+  border: 1px solid #ddd !important;
+  border-radius: 4px !important;
+}
+
+/* 使用方法説明 */
+.pert-instructions, .wbs-instructions {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #1976d2;
+}
+
+.pert-instructions h4, .wbs-instructions h4 {
+  margin: 0 0 0.75rem 0;
+  color: #1976d2;
+  font-size: 1rem;
+}
+
+.pert-instructions ul, .wbs-instructions ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.pert-instructions li, .wbs-instructions li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.pert-instructions strong, .wbs-instructions strong {
+  color: #1976d2;
+}
+
+/* タスク詳細パネル */
+.task-detail-panel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 450px;
+  background: white;
+  border-left: 1px solid #e0e0e0;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 1001;
+}
+
+.panel-header h4 {
+  margin: 0;
+  color: #1976d2;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  color: #666;
+  width: 30px;
+  height: 30px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-close:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.panel-content {
+  padding: 1rem;
+}
+
+.task-details .detail-item {
+  display: flex;
+  margin-bottom: 1rem;
+  align-items: flex-start;
+}
+
+.task-details .detail-item label {
+  font-weight: 600;
+  min-width: 100px;
+  color: #333;
+  margin-right: 0.5rem;
+}
+
+.task-details .detail-item span {
+  flex: 1;
+  color: #666;
+}
+
+/* チェックリスト管理セクション */
+.checklist-section {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.checklist-section h5 {
+  margin: 0 0 1rem 0;
+  color: #1976d2;
+  font-size: 1rem;
+}
+
+/* ドラッグ&ドロップ可能なチェックリスト */
+.draggable-checklist {
+  margin: 1rem 0;
+}
+
+.draggable-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  cursor: grab;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.draggable-item:hover {
+  border-color: #1976d2;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
+}
+
+.draggable-item:active {
+  cursor: grabbing;
+  transform: scale(1.02);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.draggable-item.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+.draggable-item .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+}
+
+.draggable-item .checkbox-label input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.draggable-item .drag-handle {
+  color: #999;
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+  cursor: grab;
+}
+
+.draggable-item .drag-handle:hover {
+  color: #1976d2;
+}
+
+.dependencies-section {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.dependencies-section h5 {
+  margin: 0 0 0.75rem 0;
+  color: #1976d2;
+}
+
+.dependencies-list {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+}
+
+.dependencies-list li {
+  background: #f8f9fa;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  border-left: 3px solid #1976d2;
+}
+
+/* プロジェクト詳細画面 */
+.project-detail {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+/* プロジェクトヘッダー */
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0;
+  padding: 1.5rem;
+  border-bottom: 2px solid #e0e0e0;
+  background: white;
+}
+
+.project-header h2 {
+  margin: 0;
+  color: #1976d2;
+  font-size: 1.6rem;
+}
+
+/* タブコンテナ */
+.tab-container {
+  background: white;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  height: calc(100vh - 120px); /* ヘッダー高さを考慮 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* タブヘッダー */
+.tabs {
+  display: flex;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  overflow-x: auto; /* モバイル対応のスクロール */
+}
+
+.tab {
+  flex: 1;
+  min-width: 140px;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.tab:hover {
+  background: rgba(25, 118, 210, 0.05);
+  color: #1976d2;
+}
+
+.tab.active {
+  background: white;
+  color: #1976d2;
+  border-bottom-color: #1976d2;
+  font-weight: 600;
+}
+
+.tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #1976d2;
+}
+
+/* タブコンテンツ */
+.tab-content {
+  flex: 1;
+  background: white;
+  overflow-y: auto;
+}
+
+/* タブアニメーション効果 */
+.tab-content > div {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* プロジェクト情報タブの改良 */
+.project-info-tab {
+  padding: 1.5rem;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.project-info-tab .info-section {
+  margin-bottom: 2.5rem;
+}
+
+.project-info-tab .info-section:last-child {
+  margin-bottom: 0;
+}
+
+.project-info-tab .info-section h3 {
+  margin-bottom: 1.5rem;
+  color: #1976d2;
+  font-size: 1.3rem;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0.75rem;
+  position: relative;
+}
+
+.project-info-tab .info-section h3::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: #1976d2;
+}
+
+/* メンバー管理タブの改良 */
+.members-tab {
+  padding: 1.5rem;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.members-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+  position: relative;
+}
+
+.members-header::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 80px;
+  height: 2px;
+  background: #1976d2;
+}
+
+.members-header h3 {
+  margin: 0;
+  color: #1976d2;
+  font-size: 1.3rem;
+}
+
+/* ドラッグ&ドロップ視覚効果 */
+.draggable-item.drag-over {
+  border-color: #1976d2;
+  background-color: #f0f7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+}
+
+.draggable-item.being-dragged {
+  opacity: 0.6;
+  transform: rotate(3deg) scale(1.05);
+  z-index: 1000;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* チェックリストアイテム完了状態 */
+.draggable-item .completed {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.draggable-item input[type="checkbox"]:checked + span {
+  opacity: 0.7;
+}
+
+/* タスク詳細パネルのスクロール改善 */
+.panel-content {
+  padding: 1rem;
+}
+
+.panel-content .edit-form {
+  margin-bottom: 1rem;
+}
+
+.panel-content .task-details {
+  margin-bottom: 1rem;
+}
+
+/* Excel-style WBS Gantt Chart Styles - 縮小版 */
+.excel-wbs-view {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.excel-wbs-view .wbs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.excel-wbs-view .wbs-header h3 {
+  margin: 0;
+  color: #1976d2;
+}
+
+/* パネル外クリック時の背景オーバーレイ用スタイル（追加） */
+.task-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  pointer-events: auto;
+}
+
+/* タスク詳細パネルのアニメーション改良 */
+.task-detail-panel {
+  transform: translateX(0) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.task-detail-panel.closing {
+  transform: translateX(100%) !important;
+}
+
+/* WBSビューのレスポンシブ改良 */
+.excel-wbs-view.has-panel {
+  padding-right: 0;
+}
+
+/* タスク行の選択状態を明確に */
+.task-row-selected {
+  background-color: #e3f2fd !important;
+  border-left: 3px solid #1976d2 !important;
+}
+
+/* ガントチャート部分の幅調整時のスムーズなトランジション */
+.gantt-table-container {
+  transition: width 0.3s ease;
+}
+
+/* モバイル対応：パネルが開いている時の調整 */
+@media (max-width: 768px) {
+  .task-detail-panel {
+    width: 100% !important;
+  }
+  
+  .excel-wbs-view.has-panel .gantt-table-container {
+    display: none;
+  }
+}
+
+
+
+/* レスポンシブデザイン */
+@media (max-width: 1024px) {
+  .sidebar-open {
+    width: 220px;
+  }
+
+  .content-with-sidebar {
+    margin-left: 220px;
+  }
+
+  .task-detail-panel {
+    width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    z-index: 1001;
+  }
+
+  .sidebar-open {
+    width: 250px;
+  }
+
+  .sidebar-closed {
+    width: 0;
+    overflow: hidden;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0.5rem;
+  }
+
+  .project-detail {
+    padding: 0;
+  }
+  
+  .project-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .project-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .tab-container {
+    height: calc(100vh - 100px);
+  }
+  
+  .tabs {
+    flex-wrap: nowrap;
+  }
+  
+  .tab {
+    min-width: 120px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .project-info-tab,
+  .members-tab {
+    padding: 1rem;
+  }
+  
+  .project-info-tab .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .task-detail-panel {
+    width: 100%;
+  }
+
+  .modal {
+    max-width: 95%;
+    margin: 1rem;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+
+  .pert-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .pert-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* 基本情報テーブルの1列幅調整 */
+  .info-table th {
+    width: 38%;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tab {
+    min-width: 100px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  
+  .project-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .sidebar-header {
+    padding: 0.75rem;
+  }
+
+  .app-title {
+    font-size: 1rem;
+  }
+
+  .task-detail-panel {
+    width: 100vw;
+  }
+
+  /* モバイルでの行間詰め */
+  .info-table th, .info-table td {
+    padding: 0.75rem;
+  }
+}
