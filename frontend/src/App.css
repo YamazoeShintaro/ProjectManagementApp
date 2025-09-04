@@ -209,7 +209,7 @@ body {
 .main-content {
   flex: 1;
   transition: margin-left 0.3s ease;
-  padding: 1rem 1rem 1rem 1.5rem;
+  padding: 0.5rem 0.5rem 0.5rem 0.85rem;
   overflow-x: auto;
 }
 
@@ -619,14 +619,12 @@ tr:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 1rem;
+  margin-bottom: 10.5rem;
 }
 
 .wbs-info {
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .task-item {
@@ -743,7 +741,7 @@ tr:hover {
 .pert-chart {
   background: white;
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -751,7 +749,7 @@ tr:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -783,16 +781,16 @@ tr:hover {
 }
 
 .dependency-type-selector label {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #333;
   font-weight: 500;
 }
 
 .dependency-type-selector select {
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.45rem;
   border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
   background: white;
 }
 
@@ -808,7 +806,7 @@ tr:hover {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #333;
 }
 
@@ -1372,8 +1370,7 @@ tr:hover {
 /* Excel-style WBS Gantt Chart Styles - 縮小版 */
 .excel-wbs-view {
   background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem;
   height: 100%;
   overflow: hidden;
   display: flex;
@@ -1384,9 +1381,7 @@ tr:hover {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 0.5rem;
 }
 
 .excel-wbs-view .wbs-header h3 {
@@ -1477,7 +1472,7 @@ tr:hover {
 
   .main-content {
     margin-left: 0 !important;
-    padding: 0.5rem;
+    padding: 0.25rem;
   }
 
   .project-detail {

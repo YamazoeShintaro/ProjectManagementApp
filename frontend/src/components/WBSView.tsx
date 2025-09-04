@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { FaPlus, FaFilePdf, FaTimes, FaEdit, FaSave, FaTasks } from 'react-icons/fa';
+import { FaPlus, FaFilePdf, FaTimes, FaEdit, FaSave, FaTasks, FaCog, FaExpand, FaCompress } from 'react-icons/fa';
 import { WBSTask, Employee, ProjectMember, Project, TaskChecklist } from '../types/index';
 import { taskAPI, checklistAPI } from '../utils/api';
 import { exportWBSToPDF } from '../utils/pdf-utils';
@@ -28,6 +28,11 @@ const WBSView: React.FC<Props> = ({
   const [selectedTask, setSelectedTask] = useState<WBSTask | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  
+  // 表示設定の状態（シンプル化）
+  const [dateCellWidth, setDateCellWidth] = useState(30); // 10-100px
+  const [rowHeight, setRowHeight] = useState(45); // 30-80px
+  
   const [newTask, setNewTask] = useState({
     task_name: '',
     description: '',
@@ -242,6 +247,66 @@ const WBSView: React.FC<Props> = ({
     return dates;
   }, [sortedTasks, projectStartDate, projectEndDate]);
 
+  // 年月情報を計算（新機能）
+  const dateHeaderInfo = useMemo(() => {
+    const yearBlocks: Array<{ year: number; startIndex: number; length: number }> = [];
+    const monthBlocks: Array<{ year: number; month: number; startIndex: number; length: number }> = [];
+    
+    let currentYear = -1;
+    let currentMonth = -1;
+    let yearStart = 0;
+    let monthStart = 0;
+    
+    dateRange.forEach((date, index) => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      
+      // 年の区切り処理
+      if (year !== currentYear) {
+        if (currentYear !== -1) {
+          yearBlocks.push({
+            year: currentYear,
+            startIndex: yearStart,
+            length: index - yearStart
+          });
+        }
+        currentYear = year;
+        yearStart = index;
+      }
+      
+      // 月の区切り処理
+      if (year !== Math.floor(currentMonth / 12) || month !== currentMonth % 12) {
+        if (currentMonth !== -1) {
+          monthBlocks.push({
+            year: Math.floor(currentMonth / 12),
+            month: currentMonth % 12,
+            startIndex: monthStart,
+            length: index - monthStart
+          });
+        }
+        currentMonth = year * 12 + month;
+        monthStart = index;
+      }
+      
+      // 最後の処理
+      if (index === dateRange.length - 1) {
+        yearBlocks.push({
+          year: currentYear,
+          startIndex: yearStart,
+          length: index - yearStart + 1
+        });
+        monthBlocks.push({
+          year: Math.floor(currentMonth / 12),
+          month: currentMonth % 12,
+          startIndex: monthStart,
+          length: index - monthStart + 1
+        });
+      }
+    });
+    
+    return { yearBlocks, monthBlocks };
+  }, [dateRange]);
+
   const today = new Date().toDateString();
 
   // タスク期間のポジション計算
@@ -260,8 +325,8 @@ const WBSView: React.FC<Props> = ({
     if (startIndex === -1) return null;
     
     return {
-      left: startIndex * 30,
-      width: Math.max(durationDays * 30, 25)
+      left: startIndex * dateCellWidth,
+      width: Math.max(durationDays * dateCellWidth, 25)
     };
   };
 
@@ -539,24 +604,35 @@ const WBSView: React.FC<Props> = ({
     return '#2196F3';
   };
 
-  // 月の変わり目を検出
-  const isMonthStart = (date: Date, index: number) => {
-    if (index === 0) return true;
-    return date.getDate() === 1;
+  // 表示設定のプリセット（シンプル化）
+  const applyPreset = (preset: 'compact' | 'normal' | 'expanded') => {
+    switch (preset) {
+      case 'compact':
+        setDateCellWidth(10);
+        setRowHeight(30);
+        break;
+      case 'normal':
+        setDateCellWidth(20);
+        setRowHeight(35);
+        break;
+      case 'expanded':
+        setDateCellWidth(30);
+        setRowHeight(35);
+        break;
+    }
   };
 
-  const ROW_HEIGHT = 45;
-  const LEFT_COLUMNS_WIDTH = 570;
-  const DATE_CELL_WIDTH = 30;
+  const LEFT_COLUMNS_WIDTH = 502;
   const DETAIL_PANEL_WIDTH = 450;
+  const HEADER_HEIGHT = 72; // 3段ヘッダーの高さ
 
   return (
-    <div 
+    <div
       className="excel-wbs-view"
       onClick={handleBackgroundClick}
       style={{ position: 'relative' }}
     >
-      {/* WBS ヘッダー */}
+      {/* WBS ヘッダー（シンプル化） */}
       <div className="wbs-header">
         <div>
           <button 
@@ -566,13 +642,74 @@ const WBSView: React.FC<Props> = ({
               setShowCreateForm(true);
             }}
             disabled={isExportingPDF}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              borderRadius: '3px',
+              gap: '0.5rem',
+              fontSize: '0.85rem',
+              padding: '0.4rem 0.8rem'
+            }}
           >
-            <FaPlus />
+            <FaPlus style={{ fontSize: '0.8rem' }}/>
             タスク追加
           </button>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* プリセットボタン（表示設定の外に出す） */}
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button
+              onClick={() => applyPreset('compact')}
+              style={{
+                padding: '0.4rem 0.75rem',
+                backgroundColor: dateCellWidth === 10 && rowHeight === 30 ? '#1976d2' : '#f5f5f5',
+                color: dateCellWidth === 10 && rowHeight === 30 ? 'white' : '#333',
+                border: '1px solid #ddd',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '0.7rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+            >
+              <FaCompress style={{ fontSize: '0.6rem' }} />
+              コンパクト
+            </button>
+            <button
+              onClick={() => applyPreset('normal')}
+              style={{
+                padding: '0.4rem 0.75rem',
+                backgroundColor: dateCellWidth === 20 && rowHeight === 35 ? '#1976d2' : '#f5f5f5',
+                color: dateCellWidth === 20 && rowHeight === 35 ? 'white' : '#333',
+                border: '1px solid #ddd',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '0.7rem'
+              }}
+            >
+              標準
+            </button>
+            <button
+              onClick={() => applyPreset('expanded')}
+              style={{
+                padding: '0.4rem 0.75rem',
+                backgroundColor: dateCellWidth === 30 && rowHeight === 35 ? '#1976d2' : '#f5f5f5',
+                color: dateCellWidth === 30 && rowHeight === 35 ? 'white' : '#333',
+                border: '1px solid #ddd',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '0.7rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem'
+              }}
+            >
+              <FaExpand style={{ fontSize: '0.6rem' }} />
+              拡大
+            </button>
+          </div>
+          
           <div className="wbs-info">
             <span>総タスク数: {sortedTasks.length}</span>
           </div>
@@ -598,7 +735,7 @@ const WBSView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* タスク作成フォーム（必須項目バリデーション追加） */}
+      {/* タスク作成フォーム */}
       {showCreateForm && (
         <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="modal">
@@ -707,7 +844,7 @@ const WBSView: React.FC<Props> = ({
         <div 
           ref={ganttContainerRef}
           style={{
-            height: 'calc(100vh - 280px)',
+            height: 'calc(100vh - 190px)', // 高さを増加（280px → 220px）
             border: '1px solid #e0e0e0',
             borderRadius: '4px',
             overflow: 'hidden',
@@ -719,10 +856,10 @@ const WBSView: React.FC<Props> = ({
           }}
           data-pdf-export="gantt-chart"
         >
-          {/* ヘッダー行 */}
+          {/* 3段階ヘッダー行 */}
           <div style={{
             display: 'flex',
-            height: '50px',
+            height: `${HEADER_HEIGHT}px`,
             backgroundColor: '#f8f9fa',
             borderBottom: '2px solid #e0e0e0',
             position: 'sticky',
@@ -733,69 +870,80 @@ const WBSView: React.FC<Props> = ({
             <div style={{
               width: `${LEFT_COLUMNS_WIDTH}px`,
               display: 'flex',
+              flexDirection: 'column',
               borderRight: '2px solid #e0e0e0',
               backgroundColor: '#f8f9fa',
               position: 'sticky',
               left: 0,
               zIndex: 101
             }}>
+              {/* 年の部分（左側は空） */}
+              <div style={{ height: '20px', borderBottom: '1px solid #e0e0e0' }}></div>
+              {/* 月の部分（左側は空） */}
+              <div style={{ height: '20px', borderBottom: '1px solid #e0e0e0' }}></div>
+              {/* 列見出し */}
               <div style={{ 
-                width: '120px',
-                padding: '0.5rem', 
-                borderRight: '1px solid #e0e0e0', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                height: '30px',
+                display: 'flex'
               }}>
-                カテゴリ
-              </div>
-              <div style={{ 
-                width: '170px',
-                padding: '0.5rem', 
-                borderRight: '1px solid #e0e0e0', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center'
-              }}>
-                タスク名
-              </div>
-              <div style={{ 
-                width: '90px', 
-                padding: '0.5rem', 
-                borderRight: '1px solid #e0e0e0', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                担当者
-              </div>
-              <div style={{ 
-                width: '80px', 
-                padding: '0.5rem', 
-                borderRight: '1px solid #e0e0e0', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                進捗
-              </div>
-              <div style={{ 
-                width: '110px', 
-                padding: '0.5rem', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                ステータス
+                <div style={{ 
+                  width: '90px',
+                  padding: '0.5rem', 
+                  borderRight: '1px solid #e0e0e0', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  カテゴリ
+                </div>
+                <div style={{ 
+                  width: '170px',
+                  padding: '0.5rem', 
+                  borderRight: '1px solid #e0e0e0', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  タスク名
+                </div>
+                <div style={{ 
+                  width: '80px', 
+                  padding: '0.5rem', 
+                  borderRight: '1px solid #e0e0e0', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  担当者
+                </div>
+                <div style={{ 
+                  width: '80px', 
+                  padding: '0.5rem', 
+                  borderRight: '1px solid #e0e0e0', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  進捗
+                </div>
+                <div style={{ 
+                  width: '80px', 
+                  padding: '0.5rem', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  ステータス
+                </div>
               </div>
             </div>
 
@@ -807,49 +955,107 @@ const WBSView: React.FC<Props> = ({
                 flex: 1,
                 overflow: 'auto',
                 display: 'flex',
+                flexDirection: 'column',
                 minWidth: 0
               }}
             >
-              {dateRange.map((date, index) => {
-                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                const monthStart = isMonthStart(date, index);
-                const outsideProject = isOutsideProjectPeriod(date);
-                
-                return (
+              {/* 年の表示 */}
+              <div style={{ 
+                height: '20px', 
+                display: 'flex', 
+                borderBottom: '1px solid #e0e0e0',
+                backgroundColor: '#e8f4ff'
+              }}>
+                {dateHeaderInfo.yearBlocks.map((yearBlock, index) => (
                   <div 
-                    key={index} 
+                    key={`year-${index}`} 
                     style={{ 
-                      minWidth: `${DATE_CELL_WIDTH}px`,
-                      width: `${DATE_CELL_WIDTH}px`,
-                      padding: '0.25rem',
-                      borderRight: index % 7 === 6 ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                      textAlign: 'center',
-                      fontSize: '0.7rem',
-                      backgroundColor: outsideProject 
-                        ? '#f5f5f5'
-                        : isWeekend ? '#ffebee' : '#f8f9fa',
+                      minWidth: `${yearBlock.length * dateCellWidth}px`,
+                      width: `${yearBlock.length * dateCellWidth}px`,
                       display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
                       alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRight: index < dateHeaderInfo.yearBlocks.length - 1 ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      color: '#1976d2',
                       flexShrink: 0,
-                      opacity: outsideProject ? 0.6 : 1
+                      backgroundColor: '#e8f4ff'
                     }}
                   >
-                    <div style={{ fontWeight: 600, color: outsideProject ? '#999' : '#333' }}>
-                      {date.getDate()}
-                    </div>
-                    <div style={{ color: outsideProject ? '#999' : '#666', fontSize: '0.6rem' }}>
-                      {getDayOfWeek(date)}
-                    </div>
-                    {monthStart && (
-                      <div style={{ fontSize: '0.55rem', color: outsideProject ? '#999' : '#1976d2', fontWeight: 600 }}>
-                        {date.getMonth() + 1}月
-                      </div>
-                    )}
+                    {yearBlock.year}年
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              
+              {/* 月の表示 */}
+              <div style={{ 
+                height: '20px', 
+                display: 'flex', 
+                borderBottom: '1px solid #e0e0e0',
+                backgroundColor: '#f0f8ff'
+              }}>
+                {dateHeaderInfo.monthBlocks.map((monthBlock, index) => (
+                  <div 
+                    key={`month-${index}`} 
+                    style={{ 
+                      minWidth: `${monthBlock.length * dateCellWidth}px`,
+                      width: `${monthBlock.length * dateCellWidth}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRight: '1px solid #ddd',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      color: '#1976d2',
+                      flexShrink: 0,
+                      backgroundColor: '#f0f8ff'
+                    }}
+                  >
+                    {monthBlock.month + 1}月
+                  </div>
+                ))}
+              </div>
+              
+              {/* 日・曜日の表示 */}
+              <div style={{ height: '30px', display: 'flex' }}>
+                {dateRange.map((date, index) => {
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                  const outsideProject = isOutsideProjectPeriod(date);
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      style={{ 
+                        minWidth: `${dateCellWidth}px`,
+                        width: `${dateCellWidth}px`,
+                        padding: '0.25rem',
+                        borderRight: index % 7 === 6 ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                        textAlign: 'center',
+                        fontSize: dateCellWidth >= 30 ? '0.7rem' : '0.6rem',
+                        backgroundColor: outsideProject 
+                          ? '#f5f5f5'
+                          : isWeekend ? '#ffebee' : '#f8f9fa',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        opacity: outsideProject ? 0.6 : 1
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, color: outsideProject ? '#999' : '#333', lineHeight: '1' }}>
+                        {date.getDate()}
+                      </div>
+                      {dateCellWidth >= 25 && (
+                        <div style={{ color: outsideProject ? '#999' : '#666', fontSize: dateCellWidth >= 30 ? '0.6rem' : '0.5rem', lineHeight: '1' }}>
+                          {getDayOfWeek(date)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -880,8 +1086,8 @@ const WBSView: React.FC<Props> = ({
                     key={task.task_id} 
                     style={{ 
                       display: 'flex',
-                      height: `${ROW_HEIGHT}px`,
-                      minHeight: `${ROW_HEIGHT}px`,
+                      height: `${rowHeight}px`,
+                      minHeight: `${rowHeight}px`,
                       borderBottom: '1px solid #e0e0e0',
                       cursor: 'pointer',
                       backgroundColor: isSelected ? '#e3f2fd' : 'white'
@@ -893,7 +1099,7 @@ const WBSView: React.FC<Props> = ({
                   >
                     {/* カテゴリ列 */}
                     <div style={{ 
-                      width: '120px',
+                      width: '90px',
                       borderRight: '1px solid #e0e0e0',
                       display: 'flex',
                       alignItems: 'center',
@@ -905,7 +1111,7 @@ const WBSView: React.FC<Props> = ({
                           backgroundColor: getCategoryColor(taskCategory),
                           color: 'white',
                           padding: '0.2rem 0.4rem',
-                          fontSize: '0.7rem',
+                          fontSize: rowHeight >= 50 ? '0.7rem' : '0.65rem',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -928,7 +1134,7 @@ const WBSView: React.FC<Props> = ({
                       borderRight: '1px solid #e0e0e0',
                       display: 'flex',
                       alignItems: 'center',
-                      fontSize: '0.8rem'
+                      fontSize: rowHeight >= 50 ? '0.8rem' : '0.75rem'
                     }}>
                       <span style={{ 
                         color: '#1976d2', 
@@ -946,13 +1152,13 @@ const WBSView: React.FC<Props> = ({
                     
                     {/* 担当者列 */}
                     <div style={{ 
-                      width: '90px', 
+                      width: '80px', 
                       padding: '0.5rem', 
                       borderRight: '1px solid #e0e0e0',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '0.7rem',
+                      fontSize: rowHeight >= 50 ? '0.7rem' : '0.65rem',
                       color: '#666'
                     }}>
                       {task.assignee ? (
@@ -982,7 +1188,7 @@ const WBSView: React.FC<Props> = ({
                     }}>
                       <div style={{ 
                         width: '50px', 
-                        height: '4px', 
+                        height: Math.max(4, rowHeight * 0.08), 
                         backgroundColor: '#e0e0e0', 
                         borderRadius: '2px', 
                         overflow: 'hidden' 
@@ -994,14 +1200,16 @@ const WBSView: React.FC<Props> = ({
                           transition: 'width 0.3s ease'
                         }} />
                       </div>
-                      <span style={{ fontSize: '0.6rem', color: '#666' }}>
-                        {Math.round(progress * 100)}%
-                      </span>
+                      {rowHeight >= 45 && (
+                        <span style={{ fontSize: '0.6rem', color: '#666' }}>
+                          {Math.round(progress * 100)}%
+                        </span>
+                      )}
                     </div>
                     
                     {/* ステータス列 */}
                     <div style={{ 
-                      width: '110px', 
+                      width: '80px', 
                       padding: '0.5rem',
                       display: 'flex',
                       alignItems: 'center',
@@ -1016,13 +1224,13 @@ const WBSView: React.FC<Props> = ({
                         onClick={(e) => e.stopPropagation()}
                         disabled={isExportingPDF}
                         style={{
-                          padding: '0.5rem',
-                          fontSize: '0.7rem',
+                          padding: '0.25rem',
+                          fontSize: rowHeight >= 50 ? '0.7rem' : '0.65rem',
                           border: '1px solid #ddd',
                           borderRadius: '3px',
                           backgroundColor: 'white',
                           cursor: isExportingPDF ? 'not-allowed' : 'pointer',
-                          width: '90px'
+                          width: '80px'
                         }}
                       >
                         <option value="NOT_STARTED">未着手</option>
@@ -1046,8 +1254,8 @@ const WBSView: React.FC<Props> = ({
               }}
             >
               <div style={{
-                width: `${dateRange.length * DATE_CELL_WIDTH}px`,
-                minHeight: `${sortedTasks.length * ROW_HEIGHT}px`,
+                width: `${dateRange.length * dateCellWidth}px`,
+                minHeight: `${sortedTasks.length * rowHeight}px`,
                 position: 'relative'
               }}>
                 {sortedTasks.map((task, taskIndex) => {
@@ -1060,10 +1268,10 @@ const WBSView: React.FC<Props> = ({
                       key={task.task_id} 
                       style={{ 
                         position: 'absolute',
-                        top: `${taskIndex * ROW_HEIGHT}px`,
+                        top: `${taskIndex * rowHeight}px`,
                         left: 0,
                         right: 0,
-                        height: `${ROW_HEIGHT}px`,
+                        height: `${rowHeight}px`,
                         borderBottom: '1px solid #e0e0e0',
                         cursor: 'pointer',
                         backgroundColor: isSelected ? 'rgba(227, 242, 253, 0.3)' : 'transparent'
@@ -1082,8 +1290,8 @@ const WBSView: React.FC<Props> = ({
                         // タスク期間内かどうかを判定
                         let isTaskCell = false;
                         if (position) {
-                          const cellLeft = index * DATE_CELL_WIDTH;
-                          const cellRight = (index + 1) * DATE_CELL_WIDTH;
+                          const cellLeft = index * dateCellWidth;
+                          const cellRight = (index + 1) * dateCellWidth;
                           const taskLeft = position.left;
                           const taskRight = position.left + position.width;
                           isTaskCell = cellLeft < taskRight && cellRight > taskLeft;
@@ -1094,8 +1302,8 @@ const WBSView: React.FC<Props> = ({
                             key={index} 
                             style={{ 
                               position: 'absolute',
-                              left: `${index * DATE_CELL_WIDTH}px`,
-                              width: `${DATE_CELL_WIDTH}px`,
+                              left: `${index * dateCellWidth}px`,
+                              width: `${dateCellWidth}px`,
                               height: '100%',
                               borderRight: index % 7 === 6 ? '2px solid #e0e0e0' : '1px solid #f5f5f5',
                               backgroundColor: isTaskCell ? (
@@ -1153,7 +1361,7 @@ const WBSView: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* タスク詳細パネル（右側）（必須項目バリデーション追加） */}
+        {/* タスク詳細パネル（右側）*/}
         {selectedTask && (
           <div 
             className="task-detail-panel"
@@ -1209,7 +1417,7 @@ const WBSView: React.FC<Props> = ({
             </div>
 
             <div className="panel-content" style={{ padding: '1rem' }}>
-              {/* タスク詳細表示/編集（必須項目対応） */}
+              {/* タスク詳細表示/編集 */}
               {isEditing ? (
                 <div className="edit-form">
                   <div className="form-group">
