@@ -429,9 +429,16 @@ const PERTChart: React.FC<Props> = ({
             <button 
               className="btn btn-primary"
               onClick={() => setShowCreateForm(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '3px',
+                gap: '0.5rem',
+                fontSize: '0.85rem',
+                padding: '0.4rem 0.8rem'
+              }}
             >
-              <FaPlus />
+              <FaPlus style={{ fontSize: '0.8rem' }}/>
               タスク追加
             </button>
           </div>

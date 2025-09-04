@@ -254,27 +254,67 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div className="project-detail">
-      {/* プロジェクト情報ヘッダー（戻るボタン付き） */}
-      <div className="project-header">
+      {/* コンパクト化されたプロジェクト情報ヘッダー */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0.75rem 1.5rem',
+        borderBottom: '1px solid #e0e0e0',
+        backgroundColor: 'white',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <h2>{project.project_name}</h2>
+          <Link 
+            to="/" 
+            style={{
+              color: '#666',
+              fontSize: '0.9rem',
+              textDecoration: 'none'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.textDecoration = 'underline';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.textDecoration = 'none';
+            }}
+          >
+            プロジェクト一覧
+          </Link>
+          <div
+            style={{
+              color: '#666',
+              fontSize: '0.6rem',
+              textDecoration: 'none'
+            }}
+          >
+            ＞
+          </div>
+          <h2 style={{ 
+            margin: 0, 
+            color: '#1976d2', 
+            fontSize: '1.3rem',
+            fontWeight: 600
+          }}>
+            {project.project_name}
+          </h2>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {/* スケジュール変更通知インジケーター */}
           {scheduleNeedsRecalculation && (
             <span style={{ 
               color: '#ff9800', 
-              fontSize: '0.9rem', 
+              fontSize: '0.8rem', 
               backgroundColor: '#fff3e0', 
-              padding: '0.25rem 0.5rem', 
-              borderRadius: '4px',
+              padding: '0.2rem 0.4rem', 
+              borderRadius: '3px',
               border: '1px solid #ffcc02',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.25rem'
             }}>
-              <FaExclamationTriangle />
-              スケジュール要更新
+              <FaExclamationTriangle style={{ fontSize: '0.7rem' }} />
+              要更新
             </span>
           )}
           <button 
@@ -286,212 +326,276 @@ const ProjectDetail: React.FC = () => {
               cursor: scheduleNeedsRecalculation ? 'pointer' : 'not-allowed',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.4rem',
+              fontSize: '0.85rem',
+              padding: '0.4rem 0.8rem'
             }}
           >
-            <FaCalculator />
+            <FaCalculator style={{ fontSize: '0.8rem' }} />
             {isCalculatingSchedule ? '計算中...' : 'スケジュール再計算'}
           </button>
         </div>
       </div>
 
-      {/* タブ切り替え */}
-      <div className="tab-container">
-        <div className="tabs">
-          <button 
-            className={`tab ${activeTab === 'wbs' ? 'active' : ''}`}
-            onClick={() => setActiveTab('wbs')}
-          >
-            <FaProjectDiagram style={{ marginRight: '0.5rem' }} />
-            WBS
-          </button>
-          <button 
-            className={`tab ${activeTab === 'pert' ? 'active' : ''}`}
-            onClick={() => setActiveTab('pert')}
-          >
-            <FaNetworkWired style={{ marginRight: '0.5rem' }} />
-            PERT図
-          </button>
-          <button 
-            className={`tab ${activeTab === 'info' ? 'active' : ''}`}
-            onClick={() => setActiveTab('info')}
-          >
-            <FaInfo style={{ marginRight: '0.5rem' }} />
-            プロジェクト詳細
-          </button>
-          <button 
-            className={`tab ${activeTab === 'members' ? 'active' : ''}`}
-            onClick={() => setActiveTab('members')}
-          >
-            <FaUsers style={{ marginRight: '0.5rem' }} />
-            メンバー管理
-          </button>
-        </div>
+      {/* コンパクト化されたタブ切り替え */}
+      <div style={{
+        display: 'flex',
+        backgroundColor: '#f8f9fa',
+        borderBottom: '1px solid #e0e0e0',
+        padding: '0 1.5rem'
+      }}>
+        <button 
+          className={`tab-compact ${activeTab === 'wbs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('wbs')}
+          style={{
+            padding: '0.6rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            color: activeTab === 'wbs' ? '#1976d2' : '#666',
+            borderBottom: activeTab === 'wbs' ? '2px solid #1976d2' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
+          }}
+        >
+          <FaProjectDiagram style={{ fontSize: '0.8rem' }} />
+          WBS
+        </button>
+        <button 
+          className={`tab-compact ${activeTab === 'pert' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pert')}
+          style={{
+            padding: '0.6rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            color: activeTab === 'pert' ? '#1976d2' : '#666',
+            borderBottom: activeTab === 'pert' ? '2px solid #1976d2' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
+          }}
+        >
+          <FaNetworkWired style={{ fontSize: '0.8rem' }} />
+          PERT図
+        </button>
+        <button 
+          className={`tab-compact ${activeTab === 'info' ? 'active' : ''}`}
+          onClick={() => setActiveTab('info')}
+          style={{
+            padding: '0.6rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            color: activeTab === 'info' ? '#1976d2' : '#666',
+            borderBottom: activeTab === 'info' ? '2px solid #1976d2' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
+          }}
+        >
+          <FaInfo style={{ fontSize: '0.8rem' }} />
+          詳細
+        </button>
+        <button 
+          className={`tab-compact ${activeTab === 'members' ? 'active' : ''}`}
+          onClick={() => setActiveTab('members')}
+          style={{
+            padding: '0.6rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            fontWeight: 500,
+            color: activeTab === 'members' ? '#1976d2' : '#666',
+            borderBottom: activeTab === 'members' ? '2px solid #1976d2' : '2px solid transparent',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
+          }}
+        >
+          <FaUsers style={{ fontSize: '0.8rem' }} />
+          メンバー
+        </button>
+      </div>
 
-        {/* タブコンテンツ */}
-        <div className="tab-content">
-          {activeTab === 'info' && (
-            <ProjectInfo 
-              project={project} 
-              onEdit={() => setShowEditForm(true)}
-            />
-          )}
+      {/* タブコンテンツ - 高さを最大化 */}
+      <div style={{
+        height: 'calc(100vh - 120px)', // ヘッダーとタブの高さを差し引いて最大化
+        overflow: 'hidden'
+      }}>
+        {activeTab === 'info' && (
+          <ProjectInfo 
+            project={project} 
+            onEdit={() => setShowEditForm(true)}
+          />
+        )}
 
-          {activeTab === 'members' && (
-            <div className="members-tab">
-              <div className="members-header">
-                <h3>プロジェクトメンバー</h3>
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => setShowAddMemberForm(true)}
-                  disabled={getAvailableEmployees().length === 0}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  <FaPlus />
-                  メンバー追加
-                </button>
-              </div>
-
-              {/* メンバー追加フォーム（step属性修正版） */}
-              {showAddMemberForm && (
-                <div className="modal-overlay">
-                  <div className="modal">
-                    <h3>メンバー追加</h3>
-                    <form onSubmit={handleAddMember}>
-                      <div className="form-group">
-                        <label>社員選択 *</label>
-                        <select
-                          required
-                          value={newMember.employee_id}
-                          onChange={(e) => setNewMember({...newMember, employee_id: e.target.value})}
-                        >
-                          <option value="">選択してください</option>
-                          {getAvailableEmployees().map(emp => (
-                            <option key={emp.employee_id} value={emp.employee_id}>
-                              {emp.employee_name} (残工数: {emp.remaining_capacity.toFixed(1)})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <div className="form-group">
-                        <label>役割</label>
-                        <input
-                          type="text"
-                          placeholder="例: 開発者、テスター、デザイナー"
-                          value={newMember.role_in_project}
-                          onChange={(e) =>
-                            setNewMember({ ...newMember, role_in_project: e.target.value })
-                          }
-                          style={{
-                            padding: "0.5rem", // 内側の余白
-                            border: "1px solid #ccc", // 薄い枠線
-                            borderRadius: "6px",      // 角丸
-                            fontSize: "0.9rem",       // 少し大きめ文字
-                            width: "100%",            // 横幅いっぱい（任意）
-                            boxSizing: "border-box",  // paddingを含めてwidth計算
-                            outline: "none",          // フォーカス時の青い枠を消す（任意）
-                          }}
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>割り当て工数（0.1 ～ 1.0）</label>
-                        <input
-                          type="number"
-                          min="0.1"
-                          max={newMember.employee_id ? 
-                            getAvailableEmployees().find(e => e.employee_id === Number(newMember.employee_id))?.remaining_capacity || 1.0 : 
-                            1.0
-                          }
-                          step="0.1"
-                          value={newMember.allocation_ratio}
-                          onChange={(e) => setNewMember({...newMember, allocation_ratio: Number(e.target.value)})}
-                          style={{
-                            padding: "0.5rem", // 内側の余白
-                            border: "1px solid #ccc", // 薄い枠線
-                            borderRadius: "6px",      // 角丸
-                            fontSize: "0.9rem",       // 少し大きめ文字
-                            width: "100%",            // 横幅いっぱい（任意）
-                            boxSizing: "border-box",  // paddingを含めてwidth計算
-                            outline: "none",          // フォーカス時の青い枠を消す（任意）
-                          }}
-                        />
-                      </div>
-                      <div className="form-actions">
-                        <button type="submit" className="btn btn-primary">
-                          追加
-                        </button>
-                        <button 
-                          type="button" 
-                          className="btn btn-secondary"
-                          onClick={() => setShowAddMemberForm(false)}
-                        >
-                          キャンセル
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
-
-              {/* メンバー一覧テーブル */}
-              <MembersTable 
-                members={members}
-                onUpdateMember={async (projectId, employeeId, updates) => {
-                  try {
-                    await projectMemberAPI.updateMember(projectId, employeeId, updates);
-                    
-                    // 稼働率変更時にスケジュール変更通知を呼び出す
-                    if (updates.allocation_ratio !== undefined) {
-                      handleScheduleChange();
-                    }
-                    
-                    await loadProjectData();
-                  } catch (error) {
-                    console.error('メンバー更新エラー:', error);
-                    alert('メンバー情報の更新に失敗しました。');
-                  }
-                }}
-                onRemoveMember={handleRemoveMember}
-                projectId={projectId}
-              />
-
-              {members.length === 0 && (
-                <div className="empty-state">
-                  プロジェクトメンバーがいません。メンバーを追加してください。
-                </div>
-              )}
+        {activeTab === 'members' && (
+          <div className="members-tab">
+            <div className="members-header">
+              <h3>プロジェクトメンバー</h3>
+              <button 
+                className="btn btn-primary"
+                onClick={() => setShowAddMemberForm(true)}
+                disabled={getAvailableEmployees().length === 0}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                <FaPlus />
+                メンバー追加
+              </button>
             </div>
-          )}
 
-          {activeTab === 'wbs' && (
-            <WBSView 
-              tasks={tasks} 
-              employees={employees}
+            {/* メンバー追加フォーム（step属性修正版） */}
+            {showAddMemberForm && (
+              <div className="modal-overlay">
+                <div className="modal">
+                  <h3>メンバー追加</h3>
+                  <form onSubmit={handleAddMember}>
+                    <div className="form-group">
+                      <label>社員選択 *</label>
+                      <select
+                        required
+                        value={newMember.employee_id}
+                        onChange={(e) => setNewMember({...newMember, employee_id: e.target.value})}
+                      >
+                        <option value="">選択してください</option>
+                        {getAvailableEmployees().map(emp => (
+                          <option key={emp.employee_id} value={emp.employee_id}>
+                            {emp.employee_name} (残工数: {emp.remaining_capacity.toFixed(1)})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>役割</label>
+                      <input
+                        type="text"
+                        placeholder="例: 開発者、テスター、デザイナー"
+                        value={newMember.role_in_project}
+                        onChange={(e) =>
+                          setNewMember({ ...newMember, role_in_project: e.target.value })
+                        }
+                        style={{
+                          padding: "0.5rem", // 内側の余白
+                          border: "1px solid #ccc", // 薄い枠線
+                          borderRadius: "6px",      // 角丸
+                          fontSize: "0.9rem",       // 少し大きめ文字
+                          width: "100%",            // 横幅いっぱい（任意）
+                          boxSizing: "border-box",  // paddingを含めてwidth計算
+                          outline: "none",          // フォーカス時の青い枠を消す（任意）
+                        }}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>割り当て工数（0.1 ～ 1.0）</label>
+                      <input
+                        type="number"
+                        min="0.1"
+                        max={newMember.employee_id ? 
+                          getAvailableEmployees().find(e => e.employee_id === Number(newMember.employee_id))?.remaining_capacity || 1.0 : 
+                          1.0
+                        }
+                        step="0.1"
+                        value={newMember.allocation_ratio}
+                        onChange={(e) => setNewMember({...newMember, allocation_ratio: Number(e.target.value)})}
+                        style={{
+                          padding: "0.5rem", // 内側の余白
+                          border: "1px solid #ccc", // 薄い枠線
+                          borderRadius: "6px",      // 角丸
+                          fontSize: "0.9rem",       // 少し大きめ文字
+                          width: "100%",            // 横幅いっぱい（任意）
+                          boxSizing: "border-box",  // paddingを含めてwidth計算
+                          outline: "none",          // フォーカス時の青い枠を消す（任意）
+                        }}
+                      />
+                    </div>
+                    <div className="form-actions">
+                      <button type="submit" className="btn btn-primary">
+                        追加
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary"
+                        onClick={() => setShowAddMemberForm(false)}
+                      >
+                        キャンセル
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* メンバー一覧テーブル */}
+            <MembersTable 
               members={members}
-              project={project}
-              onUpdateTask={handleUpdateTask}
-              onScheduleChange={handleScheduleChange}
-              projectStartDate={project.start_date}
-              projectEndDate={project.end_date}
-            />
-          )}
-          
-          {activeTab === 'pert' && (
-            <PERTChart 
-              tasks={tasks}
-              employees={employees}
-              members={members}
-              onUpdateTask={handleUpdateTask}
-              onCreateTask={handleCreateTask}
-              onCreateDependency={async (dep) => {
-                await taskAPI.createDependency(dep);
-                return;
+              onUpdateMember={async (projectId, employeeId, updates) => {
+                try {
+                  await projectMemberAPI.updateMember(projectId, employeeId, updates);
+                  
+                  // 稼働率変更時にスケジュール変更通知を呼び出す
+                  if (updates.allocation_ratio !== undefined) {
+                    handleScheduleChange();
+                  }
+                  
+                  await loadProjectData();
+                } catch (error) {
+                  console.error('メンバー更新エラー:', error);
+                  alert('メンバー情報の更新に失敗しました。');
+                }
               }}
-              onScheduleChange={handleScheduleChange}
+              onRemoveMember={handleRemoveMember}
+              projectId={projectId}
             />
-          )}
-        </div>
+
+            {members.length === 0 && (
+              <div className="empty-state">
+                プロジェクトメンバーがいません。メンバーを追加してください。
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'wbs' && (
+          <WBSView 
+            tasks={tasks} 
+            employees={employees}
+            members={members}
+            project={project}
+            onUpdateTask={handleUpdateTask}
+            onScheduleChange={handleScheduleChange}
+            projectStartDate={project.start_date}
+            projectEndDate={project.end_date}
+          />
+        )}
+        
+        {activeTab === 'pert' && (
+          <PERTChart 
+            tasks={tasks}
+            employees={employees}
+            members={members}
+            onUpdateTask={handleUpdateTask}
+            onCreateTask={handleCreateTask}
+            onCreateDependency={async (dep) => {
+              await taskAPI.createDependency(dep);
+              return;
+            }}
+            onScheduleChange={handleScheduleChange}
+          />
+        )}
       </div>
 
       {/* プロジェクト編集フォーム（新規作成フォームと同じデザイン） */}

@@ -1,6 +1,6 @@
 ================================================================================
 PROJECT MANAGEMENT APP - IMPORTANT FILES EXPORT
-Generated: 2025-09-02T08:24:46.193Z
+Generated: 2025-09-04T04:16:03.637Z
 ================================================================================
 
 EXISTING FILES:
@@ -5692,7 +5692,6 @@ const EmployeeList: React.FC = () => {
         <table>
           <thead>
             <tr>
-              <th>ID</th>
               <th>社員名</th>
               <th>メールアドレス</th>
               <th>1日の稼働時間</th>
@@ -5721,7 +5720,6 @@ const EmployeeList: React.FC = () => {
                     e.currentTarget.style.backgroundColor = '';
                   }}
                 >
-                  <td>{employee.employee_id}</td>
                   <td style={{ fontWeight: 500, color: '#1976d2' }}>{employee.employee_name}</td>
                   <td>{employee.email}</td>
                   <td>{employee.daily_work_hours || 8.0}時間/日</td>
@@ -6283,7 +6281,7 @@ export default EmployeeDetail;
 FILE: frontend/src/components/WBSView.tsx
 -----------------------------------------
 import React, { useState, useMemo, useRef, useCallback } from 'react';
-import { FaPlus, FaFilePdf, FaTimes, FaEdit, FaSave, FaTasks } from 'react-icons/fa';
+import { FaPlus, FaFilePdf, FaTimes, FaEdit, FaSave, FaTasks, FaCog, FaExpand, FaCompress } from 'react-icons/fa';
 import { WBSTask, Employee, ProjectMember, Project, TaskChecklist } from '../types/index';
 import { taskAPI, checklistAPI } from '../utils/api';
 import { exportWBSToPDF } from '../utils/pdf-utils';
@@ -6312,6 +6310,12 @@ const WBSView: React.FC<Props> = ({
   const [selectedTask, setSelectedTask] = useState<WBSTask | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  
+  // 表示設定の状態
+  const [dateCellWidth, setDateCellWidth] = useState(30); // 10-100px
+  const [rowHeight, setRowHeight] = useState(45); // 30-80px
+  const [showSettings, setShowSettings] = useState(false);
+  
   const [newTask, setNewTask] = useState({
     task_name: '',
     description: '',
@@ -6526,6 +6530,66 @@ const WBSView: React.FC<Props> = ({
     return dates;
   }, [sortedTasks, projectStartDate, projectEndDate]);
 
+  // 年月情報を計算（新機能）
+  const dateHeaderInfo = useMemo(() => {
+    const yearBlocks: Array<{ year: number; startIndex: number; length: number }> = [];
+    const monthBlocks: Array<{ year: number; month: number; startIndex: number; length: number }> = [];
+    
+    let currentYear = -1;
+    let currentMonth = -1;
+    let yearStart = 0;
+    let monthStart = 0;
+    
+    dateRange.forEach((date, index) => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      
+      // 年の区切り処理
+      if (year !== currentYear) {
+        if (currentYear !== -1) {
+          yearBlocks.push({
+            year: currentYear,
+            startIndex: yearStart,
+            length: index - yearStart
+          });
+        }
+        currentYear = year;
+        yearStart = index;
+      }
+      
+      // 月の区切り処理
+      if (year !== Math.floor(currentMonth / 12) || month !== currentMonth % 12) {
+        if (currentMonth !== -1) {
+          monthBlocks.push({
+            year: Math.floor(currentMonth / 12),
+            month: currentMonth % 12,
+            startIndex: monthStart,
+            length: index - monthStart
+          });
+        }
+        currentMonth = year * 12 + month;
+        monthStart = index;
+      }
+      
+      // 最後の処理
+      if (index === dateRange.length - 1) {
+        yearBlocks.push({
+          year: currentYear,
+          startIndex: yearStart,
+          length: index - yearStart + 1
+        });
+        monthBlocks.push({
+          year: Math.floor(currentMonth / 12),
+          month: currentMonth % 12,
+          startIndex: monthStart,
+          length: index - monthStart + 1
+        });
+      }
+    });
+    
+    return { yearBlocks, monthBlocks };
+  }, [dateRange]);
+
   const today = new Date().toDateString();
 
   // タスク期間のポジション計算
@@ -6544,8 +6608,8 @@ const WBSView: React.FC<Props> = ({
     if (startIndex === -1) return null;
     
     return {
-      left: startIndex * 30,
-      width: Math.max(durationDays * 30, 25)
+      left: startIndex * dateCellWidth,
+      width: Math.max(durationDays * dateCellWidth, 25)
     };
   };
 
@@ -6823,16 +6887,27 @@ const WBSView: React.FC<Props> = ({
     return '#2196F3';
   };
 
-  // 月の変わり目を検出
-  const isMonthStart = (date: Date, index: number) => {
-    if (index === 0) return true;
-    return date.getDate() === 1;
+  // 表示設定のプリセット
+  const applyPreset = (preset: 'compact' | 'normal' | 'expanded') => {
+    switch (preset) {
+      case 'compact':
+        setDateCellWidth(20);
+        setRowHeight(35);
+        break;
+      case 'normal':
+        setDateCellWidth(30);
+        setRowHeight(45);
+        break;
+      case 'expanded':
+        setDateCellWidth(50);
+        setRowHeight(60);
+        break;
+    }
   };
 
-  const ROW_HEIGHT = 45;
   const LEFT_COLUMNS_WIDTH = 570;
-  const DATE_CELL_WIDTH = 30;
   const DETAIL_PANEL_WIDTH = 450;
+  const HEADER_HEIGHT = 90; // 3段ヘッダーの高さ
 
   return (
     <div 
@@ -6857,11 +6932,128 @@ const WBSView: React.FC<Props> = ({
           </button>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* 表示設定ボタン */}
+          <button
+            className="btn btn-secondary"
+            onClick={() => setShowSettings(!showSettings)}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <FaCog />
+            表示設定
+          </button>
+          
           <div className="wbs-info">
             <span>総タスク数: {sortedTasks.length}</span>
           </div>
         </div>
       </div>
+
+      {/* 表示設定パネル */}
+      {showSettings && (
+        <div style={{
+          backgroundColor: 'white',
+          border: '1px solid #e0e0e0',
+          borderRadius: '8px',
+          padding: '1.5rem',
+          marginBottom: '1rem',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <h4 style={{ margin: '0 0 1rem 0', color: '#1976d2' }}>表示設定</h4>
+          
+          {/* プリセットボタン */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+              プリセット:
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={() => applyPreset('compact')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: dateCellWidth === 20 && rowHeight === 35 ? '#1976d2' : '#f5f5f5',
+                  color: dateCellWidth === 20 && rowHeight === 35 ? 'white' : '#333',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                <FaCompress style={{ marginRight: '0.5rem' }} />
+                コンパクト
+              </button>
+              <button
+                onClick={() => applyPreset('normal')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: dateCellWidth === 30 && rowHeight === 45 ? '#1976d2' : '#f5f5f5',
+                  color: dateCellWidth === 30 && rowHeight === 45 ? 'white' : '#333',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                標準
+              </button>
+              <button
+                onClick={() => applyPreset('expanded')}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: dateCellWidth === 50 && rowHeight === 60 ? '#1976d2' : '#f5f5f5',
+                  color: dateCellWidth === 50 && rowHeight === 60 ? 'white' : '#333',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem'
+                }}
+              >
+                <FaExpand style={{ marginRight: '0.5rem' }} />
+                拡大
+              </button>
+            </div>
+          </div>
+
+          {/* 詳細設定 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                1日の表示幅: {dateCellWidth}px
+              </label>
+              <input
+                type="range"
+                min="10"
+                max="100"
+                step="5"
+                value={dateCellWidth}
+                onChange={(e) => setDateCellWidth(Number(e.target.value))}
+                style={{ width: '100%' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                <span>10px</span>
+                <span>100px</span>
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                行の高さ: {rowHeight}px
+              </label>
+              <input
+                type="range"
+                min="30"
+                max="80"
+                step="5"
+                value={rowHeight}
+                onChange={(e) => setRowHeight(Number(e.target.value))}
+                style={{ width: '100%' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>
+                <span>30px</span>
+                <span>80px</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PDF出力ステータス表示 */}
       {isExportingPDF && (
@@ -6882,7 +7074,7 @@ const WBSView: React.FC<Props> = ({
         </div>
       )}
 
-      {/* タスク作成フォーム（必須項目バリデーション追加） */}
+      {/* タスク作成フォーム */}
       {showCreateForm && (
         <div className="modal-overlay" onClick={(e) => e.stopPropagation()}>
           <div className="modal">
@@ -7003,10 +7195,10 @@ const WBSView: React.FC<Props> = ({
           }}
           data-pdf-export="gantt-chart"
         >
-          {/* ヘッダー行 */}
+          {/* 3段階ヘッダー行 */}
           <div style={{
             display: 'flex',
-            height: '50px',
+            height: `${HEADER_HEIGHT}px`,
             backgroundColor: '#f8f9fa',
             borderBottom: '2px solid #e0e0e0',
             position: 'sticky',
@@ -7017,69 +7209,80 @@ const WBSView: React.FC<Props> = ({
             <div style={{
               width: `${LEFT_COLUMNS_WIDTH}px`,
               display: 'flex',
+              flexDirection: 'column',
               borderRight: '2px solid #e0e0e0',
               backgroundColor: '#f8f9fa',
               position: 'sticky',
               left: 0,
               zIndex: 101
             }}>
+              {/* 年の部分（左側は空） */}
+              <div style={{ height: '30px', borderBottom: '1px solid #e0e0e0' }}></div>
+              {/* 月の部分（左側は空） */}
+              <div style={{ height: '30px', borderBottom: '1px solid #e0e0e0' }}></div>
+              {/* 列見出し */}
               <div style={{ 
-                width: '120px',
-                padding: '0.5rem', 
-                borderRight: '1px solid #e0e0e0', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                height: '30px',
+                display: 'flex'
               }}>
-                カテゴリ
-              </div>
-              <div style={{ 
-                width: '170px',
-                padding: '0.5rem', 
-                borderRight: '1px solid #e0e0e0', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center'
-              }}>
-                タスク名
-              </div>
-              <div style={{ 
-                width: '90px', 
-                padding: '0.5rem', 
-                borderRight: '1px solid #e0e0e0', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                担当者
-              </div>
-              <div style={{ 
-                width: '80px', 
-                padding: '0.5rem', 
-                borderRight: '1px solid #e0e0e0', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                進捗
-              </div>
-              <div style={{ 
-                width: '110px', 
-                padding: '0.5rem', 
-                fontSize: '0.8rem', 
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                ステータス
+                <div style={{ 
+                  width: '120px',
+                  padding: '0.5rem', 
+                  borderRight: '1px solid #e0e0e0', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  カテゴリ
+                </div>
+                <div style={{ 
+                  width: '170px',
+                  padding: '0.5rem', 
+                  borderRight: '1px solid #e0e0e0', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  タスク名
+                </div>
+                <div style={{ 
+                  width: '90px', 
+                  padding: '0.5rem', 
+                  borderRight: '1px solid #e0e0e0', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  担当者
+                </div>
+                <div style={{ 
+                  width: '80px', 
+                  padding: '0.5rem', 
+                  borderRight: '1px solid #e0e0e0', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  進捗
+                </div>
+                <div style={{ 
+                  width: '110px', 
+                  padding: '0.5rem', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  ステータス
+                </div>
               </div>
             </div>
 
@@ -7091,49 +7294,107 @@ const WBSView: React.FC<Props> = ({
                 flex: 1,
                 overflow: 'auto',
                 display: 'flex',
+                flexDirection: 'column',
                 minWidth: 0
               }}
             >
-              {dateRange.map((date, index) => {
-                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                const monthStart = isMonthStart(date, index);
-                const outsideProject = isOutsideProjectPeriod(date);
-                
-                return (
+              {/* 年の表示 */}
+              <div style={{ 
+                height: '30px', 
+                display: 'flex', 
+                borderBottom: '1px solid #e0e0e0',
+                backgroundColor: '#e8f4ff'
+              }}>
+                {dateHeaderInfo.yearBlocks.map((yearBlock, index) => (
                   <div 
-                    key={index} 
+                    key={`year-${index}`} 
                     style={{ 
-                      minWidth: `${DATE_CELL_WIDTH}px`,
-                      width: `${DATE_CELL_WIDTH}px`,
-                      padding: '0.25rem',
-                      borderRight: index % 7 === 6 ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                      textAlign: 'center',
-                      fontSize: '0.7rem',
-                      backgroundColor: outsideProject 
-                        ? '#f5f5f5'
-                        : isWeekend ? '#ffebee' : '#f8f9fa',
+                      minWidth: `${yearBlock.length * dateCellWidth}px`,
+                      width: `${yearBlock.length * dateCellWidth}px`,
                       display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
                       alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRight: index < dateHeaderInfo.yearBlocks.length - 1 ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                      fontSize: '0.9rem',
+                      fontWeight: 700,
+                      color: '#1976d2',
                       flexShrink: 0,
-                      opacity: outsideProject ? 0.6 : 1
+                      backgroundColor: '#e8f4ff'
                     }}
                   >
-                    <div style={{ fontWeight: 600, color: outsideProject ? '#999' : '#333' }}>
-                      {date.getDate()}
-                    </div>
-                    <div style={{ color: outsideProject ? '#999' : '#666', fontSize: '0.6rem' }}>
-                      {getDayOfWeek(date)}
-                    </div>
-                    {monthStart && (
-                      <div style={{ fontSize: '0.55rem', color: outsideProject ? '#999' : '#1976d2', fontWeight: 600 }}>
-                        {date.getMonth() + 1}月
-                      </div>
-                    )}
+                    {yearBlock.year}年
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              
+              {/* 月の表示 */}
+              <div style={{ 
+                height: '30px', 
+                display: 'flex', 
+                borderBottom: '1px solid #e0e0e0',
+                backgroundColor: '#f0f8ff'
+              }}>
+                {dateHeaderInfo.monthBlocks.map((monthBlock, index) => (
+                  <div 
+                    key={`month-${index}`} 
+                    style={{ 
+                      minWidth: `${monthBlock.length * dateCellWidth}px`,
+                      width: `${monthBlock.length * dateCellWidth}px`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRight: '1px solid #ddd',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: '#1976d2',
+                      flexShrink: 0,
+                      backgroundColor: '#f0f8ff'
+                    }}
+                  >
+                    {monthBlock.month + 1}月
+                  </div>
+                ))}
+              </div>
+              
+              {/* 日・曜日の表示 */}
+              <div style={{ height: '30px', display: 'flex' }}>
+                {dateRange.map((date, index) => {
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                  const outsideProject = isOutsideProjectPeriod(date);
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      style={{ 
+                        minWidth: `${dateCellWidth}px`,
+                        width: `${dateCellWidth}px`,
+                        padding: '0.25rem',
+                        borderRight: index % 7 === 6 ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                        textAlign: 'center',
+                        fontSize: dateCellWidth >= 30 ? '0.7rem' : '0.6rem',
+                        backgroundColor: outsideProject 
+                          ? '#f5f5f5'
+                          : isWeekend ? '#ffebee' : '#f8f9fa',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                        opacity: outsideProject ? 0.6 : 1
+                      }}
+                    >
+                      <div style={{ fontWeight: 600, color: outsideProject ? '#999' : '#333', lineHeight: '1' }}>
+                        {date.getDate()}
+                      </div>
+                      {dateCellWidth >= 25 && (
+                        <div style={{ color: outsideProject ? '#999' : '#666', fontSize: dateCellWidth >= 30 ? '0.6rem' : '0.5rem', lineHeight: '1' }}>
+                          {getDayOfWeek(date)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -7164,8 +7425,8 @@ const WBSView: React.FC<Props> = ({
                     key={task.task_id} 
                     style={{ 
                       display: 'flex',
-                      height: `${ROW_HEIGHT}px`,
-                      minHeight: `${ROW_HEIGHT}px`,
+                      height: `${rowHeight}px`,
+                      minHeight: `${rowHeight}px`,
                       borderBottom: '1px solid #e0e0e0',
                       cursor: 'pointer',
                       backgroundColor: isSelected ? '#e3f2fd' : 'white'
@@ -7189,7 +7450,7 @@ const WBSView: React.FC<Props> = ({
                           backgroundColor: getCategoryColor(taskCategory),
                           color: 'white',
                           padding: '0.2rem 0.4rem',
-                          fontSize: '0.7rem',
+                          fontSize: rowHeight >= 50 ? '0.7rem' : '0.65rem',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -7212,7 +7473,7 @@ const WBSView: React.FC<Props> = ({
                       borderRight: '1px solid #e0e0e0',
                       display: 'flex',
                       alignItems: 'center',
-                      fontSize: '0.8rem'
+                      fontSize: rowHeight >= 50 ? '0.8rem' : '0.75rem'
                     }}>
                       <span style={{ 
                         color: '#1976d2', 
@@ -7236,7 +7497,7 @@ const WBSView: React.FC<Props> = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '0.7rem',
+                      fontSize: rowHeight >= 50 ? '0.7rem' : '0.65rem',
                       color: '#666'
                     }}>
                       {task.assignee ? (
@@ -7266,7 +7527,7 @@ const WBSView: React.FC<Props> = ({
                     }}>
                       <div style={{ 
                         width: '50px', 
-                        height: '4px', 
+                        height: Math.max(4, rowHeight * 0.08), 
                         backgroundColor: '#e0e0e0', 
                         borderRadius: '2px', 
                         overflow: 'hidden' 
@@ -7278,9 +7539,11 @@ const WBSView: React.FC<Props> = ({
                           transition: 'width 0.3s ease'
                         }} />
                       </div>
-                      <span style={{ fontSize: '0.6rem', color: '#666' }}>
-                        {Math.round(progress * 100)}%
-                      </span>
+                      {rowHeight >= 45 && (
+                        <span style={{ fontSize: '0.6rem', color: '#666' }}>
+                          {Math.round(progress * 100)}%
+                        </span>
+                      )}
                     </div>
                     
                     {/* ステータス列 */}
@@ -7301,7 +7564,7 @@ const WBSView: React.FC<Props> = ({
                         disabled={isExportingPDF}
                         style={{
                           padding: '0.5rem',
-                          fontSize: '0.7rem',
+                          fontSize: rowHeight >= 50 ? '0.7rem' : '0.65rem',
                           border: '1px solid #ddd',
                           borderRadius: '3px',
                           backgroundColor: 'white',
@@ -7330,8 +7593,8 @@ const WBSView: React.FC<Props> = ({
               }}
             >
               <div style={{
-                width: `${dateRange.length * DATE_CELL_WIDTH}px`,
-                minHeight: `${sortedTasks.length * ROW_HEIGHT}px`,
+                width: `${dateRange.length * dateCellWidth}px`,
+                minHeight: `${sortedTasks.length * rowHeight}px`,
                 position: 'relative'
               }}>
                 {sortedTasks.map((task, taskIndex) => {
@@ -7344,10 +7607,10 @@ const WBSView: React.FC<Props> = ({
                       key={task.task_id} 
                       style={{ 
                         position: 'absolute',
-                        top: `${taskIndex * ROW_HEIGHT}px`,
+                        top: `${taskIndex * rowHeight}px`,
                         left: 0,
                         right: 0,
-                        height: `${ROW_HEIGHT}px`,
+                        height: `${rowHeight}px`,
                         borderBottom: '1px solid #e0e0e0',
                         cursor: 'pointer',
                         backgroundColor: isSelected ? 'rgba(227, 242, 253, 0.3)' : 'transparent'
@@ -7366,8 +7629,8 @@ const WBSView: React.FC<Props> = ({
                         // タスク期間内かどうかを判定
                         let isTaskCell = false;
                         if (position) {
-                          const cellLeft = index * DATE_CELL_WIDTH;
-                          const cellRight = (index + 1) * DATE_CELL_WIDTH;
+                          const cellLeft = index * dateCellWidth;
+                          const cellRight = (index + 1) * dateCellWidth;
                           const taskLeft = position.left;
                           const taskRight = position.left + position.width;
                           isTaskCell = cellLeft < taskRight && cellRight > taskLeft;
@@ -7378,8 +7641,8 @@ const WBSView: React.FC<Props> = ({
                             key={index} 
                             style={{ 
                               position: 'absolute',
-                              left: `${index * DATE_CELL_WIDTH}px`,
-                              width: `${DATE_CELL_WIDTH}px`,
+                              left: `${index * dateCellWidth}px`,
+                              width: `${dateCellWidth}px`,
                               height: '100%',
                               borderRight: index % 7 === 6 ? '2px solid #e0e0e0' : '1px solid #f5f5f5',
                               backgroundColor: isTaskCell ? (
@@ -7437,7 +7700,7 @@ const WBSView: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* タスク詳細パネル（右側）（必須項目バリデーション追加） */}
+        {/* タスク詳細パネル（右側）*/}
         {selectedTask && (
           <div 
             className="task-detail-panel"
@@ -7493,7 +7756,7 @@ const WBSView: React.FC<Props> = ({
             </div>
 
             <div className="panel-content" style={{ padding: '1rem' }}>
-              {/* タスク詳細表示/編集（必須項目対応） */}
+              {/* タスク詳細表示/編集 */}
               {isEditing ? (
                 <div className="edit-form">
                   <div className="form-group">
@@ -9062,152 +9325,119 @@ volumes:
 
 FILE: README.md
 ---------------
-# プロジェクト管理アプリ
+## アプリ概要
 
-React（フロントエンド）+ FastAPI（バックエンド）+ PostgreSQL（データベース）で構築されたプロジェクト管理システム
+このアプリは、プロジェクト管理に必要な機能を統合したWebアプリケーションです。
+ウォーターフォール型開発にもアジャイル開発にも、さらにはシステム開発以外の様々なプロジェクトにも利用できます。
+このアプリを使用することで以下のようなことが可能になります。
 
-## 機能概要
+1. PERT図で視覚的にプロジェクト全体像を把握
+![PERT図で視覚的にプロジェクト全体像を把握](docs/screenshots/screenshot1.png)
+2. 依存関係と工数から自動でスケジュールを算出
+![依存関係と工数から自動でスケジュールを算出](docs/screenshots/screenshot2.png)
+3. WBS形式でのプロジェクト進捗管理
+![WBS形式でのプロジェクト進捗管理](docs/screenshots/screenshot3.png)
+4. 進捗のずれを反映した最適なスケジュールを即座に再計算
+![進捗のずれを反映した最適なスケジュールを即座に再計算1](docs/screenshots/screenshot4.png)
+![進捗のずれを反映した最適なスケジュールを即座に再計算2](docs/screenshots/screenshot5.png)
+5. 社員の工数配分と社内リソース管理の効率化
+![社員の工数配分と社内リソース管理の効率化1](docs/screenshots/screenshot6.png)
+![社員の工数配分と社内リソース管理の効率化2](docs/screenshots/screenshot7.png)
 
-- **プロジェクト管理**: プロジェクト作成・一覧・詳細表示
-- **WBS（作業分解構造）**: タスクの階層表示、チェックリスト管理、進捗可視化
+### 主要機能
+- **プロジェクト管理**: プロジェクトの作成・編集・一覧表示
+- **WBS（作業分解構造）**: ガントチャート風のタスク管理画面
 - **PERT図**: タスク間の依存関係をビジュアルに表示・編集
-- **スケジュール自動算出**: 依存関係と工数から最適スケジュールを計算（簡易版CPM）
-- **社員管理**: 社員登録・一覧・タスク担当者割当
+- **スケジュール自動算出**: 依存関係と工数から最適スケジュールを計算
+- **社員管理**: 社員登録・工数配分・プロジェクト参加管理
+- **チェックリスト機能**: タスクごとの詳細チェックリスト管理
 
-## 必要な環境
+## 技術スタック
 
-- **Docker & Docker Compose** （推奨）
-- **Python 3.11** （3.13は非対応）
-- **Node.js 16+**
-- **pyenv** （Pythonバージョン管理）
+- **フロントエンド**: React 18 + TypeScript + React Router
+- **バックエンド**: FastAPI + SQLAlchemy + Pydantic
+- **データベース**: PostgreSQL 14
+- **UI**: React Flow（PERT図）+ カスタムCSS
+- **開発環境**: Docker Compose
 
-## セットアップ・実行手順
+## セットアップ手順
 
-### 1. リポジトリ準備
+### 前提条件
+
+以下のソフトウェアがインストールされている必要があります：
+
+- [Docker](https://www.docker.com/get-started/) および Docker Compose
+- [Python 3.11](https://www.python.org/downloads/) （重要: 3.13は非対応）
+- [Node.js 16+](https://nodejs.org/)
+- [Git](https://git-scm.com/)
+
+### 1. リポジトリのクローン
 
 ```bash
-# プロジェクトフォルダ作成
-mkdir project-management-app
+git clone https://github.com/your-username/project-management-app.git
 cd project-management-app
-
-# フォルダ構成作成
-mkdir -p backend/models
-mkdir -p frontend/src/{components,pages,types,utils}
-mkdir -p frontend/public
 ```
 
-### 2. ファイル配置
+### 2. Pythonバージョンの設定（重要）
 
-以下のファイルを作成したArtifactsから対応する場所にコピー＆ペーストしてください：
-
-**バックエンド**
-- `backend/main.py`
-- `backend/models/database.py`
-- `backend/models/schemas.py`
-- `backend/requirements.txt`
-
-**フロントエンド**
-- `frontend/package.json`
-- `frontend/tsconfig.json`
-- `frontend/src/App.tsx`
-- `frontend/src/App.css`
-- `frontend/src/index.tsx`
-- `frontend/src/types/index.ts`
-- `frontend/src/utils/api.ts`
-- `frontend/public/index.html`
-- `frontend/src/pages/ProjectList.tsx`
-- `frontend/src/pages/ProjectDetail.tsx`
-- `frontend/src/pages/EmployeeList.tsx`
-- `frontend/src/pages/EmployeeDetail.tsx`
-- `frontend/src/components/WBSView.tsx`
-- `frontend/src/components/PERTChart.tsx`
-
-**設定ファイル**
-- `docker-compose.yml`
-
-### 3. データベース起動（Docker）
+Python 3.13では依存関係でエラーが発生するため、Python 3.11を使用してください。
 
 ```bash
-# docker-compose.yml を作成（以下の内容）
-```
-
-```yaml
-version: '3.8'
-services:
-  postgres:
-    image: postgres:14
-    environment:
-      POSTGRES_DB: project_management
-      POSTGRES_USER: pm_user
-      POSTGRES_PASSWORD: pm_password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
-```
-
-```bash
-# PostgreSQL コンテナ起動
-docker-compose up -d
-
-# コンテナ起動確認
-docker ps
-```
-
-### 4. Pythonバージョン設定（重要）
-
-```bash
-# Python 3.11をインストール（pyenv使用）
+# pyenvを使用している場合
 pyenv install 3.11.10
-
-# プロジェクト用にPython 3.11を設定
 pyenv local 3.11.10
 
-# PYENV_VERSION環境変数をクリア（重要）
+# 環境変数をクリア
 unset PYENV_VERSION
 
-# Pythonバージョン確認
+# バージョン確認
 python --version  # Python 3.11.10 と表示されることを確認
 ```
 
-### 5. バックエンド起動
+### 3. データベースの起動
+
+```bash
+# PostgreSQLコンテナ起動
+docker-compose up -d
+
+# 起動確認
+docker ps
+```
+
+### 4. バックエンドの起動
 
 ```bash
 cd backend
 
-# 仮想環境作成・有効化
+# 仮想環境作成
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Pythonバージョン確認（仮想環境内）
-python --version  # Python 3.11.10 であることを確認
+# 仮想環境有効化
+# Linux/Mac:
+source venv/bin/activate
+# Windows:
+# venv\Scripts\activate
 
 # 依存関係インストール
 pip install -r requirements.txt
-
-# email-validatorを追加インストール
 pip install email-validator
 
-# 環境変数設定
+# 環境変数ファイル作成
 echo "DATABASE_URL=postgresql://pm_user:pm_password@localhost:5432/project_management" > .env
 
-# バックエンド起動
+# アプリケーション起動
 python main.py
 ```
 
-**成功時の出力:**
+成功すると以下のメッセージが表示されます：
 ```
-INFO:     Started server process [xxxxx]
-INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Application startup complete.
 ```
 
-### 6. フロントエンド起動
+### 5. フロントエンドの起動
 
-**新しいターミナルウィンドウで実行:**
+**新しいターミナルウィンドウ**で以下を実行：
 
 ```bash
 cd frontend
@@ -9219,178 +9449,207 @@ npm install
 npm start
 ```
 
-**成功時:**
-- ブラウザが自動的に http://localhost:3000 を開く
-- 「プロジェクト管理システム」画面が表示される
+ブラウザが自動的に http://localhost:3000 を開きます。
 
-## 動作確認
+## 使用方法
 
-### 基本動作テスト
+### 基本的な操作の流れ
 
-1. **API確認**: http://localhost:8000/docs でSwagger UI表示
-2. **社員一覧**: サンプルデータ（田中太郎、佐藤花子、鈴木一郎）が表示
-3. **プロジェクト作成**: 新規プロジェクトを作成
-4. **タスク管理**: プロジェクト詳細画面でWBS・PERT図を確認
+#### 1. 社員登録
+1. サイドバーの「社員一覧」をクリック
+2. 「新規社員登録」ボタンを押す
+3. 社員名、メールアドレス、1日の稼働時間を入力
+4. 「登録」ボタンで完了
 
-### 主要URL
+#### 2. プロジェクト作成
+1. トップページ（プロジェクト一覧）で「新規プロジェクト作成」をクリック
+2. 基本情報を入力：
+   - プロジェクト名（必須）
+   - 開始日・終了日（必須）
+   - プロジェクトマネージャー
+   - クライアント名
+   - 予算
+3. プロジェクトメンバーを選択：
+   - 社員にチェックを入れる
+   - 役割と稼働率を設定
+4. 「作成」ボタンで完了
 
-- **フロントエンド**: http://localhost:3000
-- **バックエンドAPI**: http://localhost:8000
-- **API仕様**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+#### 3. タスク管理（WBS画面）
+1. プロジェクト一覧からプロジェクトをクリック
+2. 「WBS」タブを選択
+3. 「タスク追加」でタスクを作成：
+   - タスク名（必須）
+   - 予定工数（必須）
+   - 担当者（必須）
+   - カテゴリ（任意）
+   - 説明
+   - マイルストーン設定
+4. タスクをクリックして詳細編集・チェックリスト管理
 
-## よくあるトラブルと解決法
+#### 4. 依存関係設定（PERT図）
+1. 「PERT図」タブを選択
+2. 依存関係の種類を選択（FS：終了→開始など）
+3. タスクノードの右端から線を引いて別のタスクの左端に接続
+4. 依存関係を削除する場合は線をクリック
 
-### Python関連
+#### 5. スケジュール計算
+1. タスクや依存関係を変更後、「スケジュール要更新」が表示される
+2. 「スケジュール再計算」ボタンをクリック
+3. 自動的に最適なスケジュールが算出される
 
-**1. Python 3.13エラー**
+## 主要なユースケース
+
+### 1. システム開発プロジェクト
+
+**シナリオ**: ECサイト構築プロジェクト（3ヶ月、5名体制）
+
+**手順**:
+1. プロジェクト作成（期間：2025-09-01 〜 2025-11-30）
+2. メンバー登録：PM（1.0）、SE（0.8）、PG（0.8）、デザイナー（0.4）、テスター（0.6）
+3. タスク作成例：
+   - `[要件定義] 業務要件整理` → PM担当、5人日
+   - `[設計] システム設計書作成` → SE担当、8人日  
+   - `[開発] フロントエンド実装` → PG担当、15人日
+   - `[テスト] 単体テスト` → PG担当、5人日
+   - `[テスト] 結合テスト` → テスター担当、10人日
+4. 依存関係設定：要件定義 → 設計 → 開発 → 単体テスト → 結合テスト
+5. スケジュール自動計算で最適な開始・終了日を算出
+
+### 2. イベント企画プロジェクト
+
+**シナリオ**: 社内イベント企画（2ヶ月、3名体制）
+
+**手順**:
+1. プロジェクト作成（期間：2025-09-01 〜 2025-10-31）
+2. メンバー登録：企画責任者（1.0）、デザイナー（0.3）、総務（0.2）
+3. タスク作成例：
+   - `[企画] イベント企画書作成` → 企画責任者、3人日
+   - `[デザイン] ポスター作成` → デザイナー、2人日
+   - `[準備] 会場予約` → 総務、1人日
+   - `[準備] ケータリング手配` → 総務、1人日
+   - `[実施] イベント当日運営` → 全員、1人日
+4. マイルストーン設定：企画書完成、ポスター完成、イベント実施
+
+### 3. 製品開発プロジェクト
+
+**シナリオ**: 新製品開発（6ヶ月、8名体制）
+
+**手順**:
+1. フェーズ分割：企画フェーズ、設計フェーズ、開発フェーズ、テストフェーズ
+2. 各フェーズでタスクを詳細化
+3. クリティカルパスを意識した依存関係設定
+4. 定期的なスケジュール見直しと工数調整
+
+## システムの詳細仕様
+
+### 機能詳細
+
+#### WBS（作業分解構造）画面
+- **Excel風ガントチャート**: 左側にタスク情報、右側に期間バーを表示
+- **リアルタイム進捗表示**: チェックリスト完了率に基づく進捗可視化
+- **カテゴリ管理**: タスクをカテゴリ別に色分け表示
+- **タスク詳細パネル**: 右側パネルでタスクの詳細情報・チェックリスト管理
+
+#### PERT図画面
+- **ドラッグ&ドロップ**: タスクノードを自由に配置
+- **依存関係作成**: ノード間を線で接続して依存関係を設定
+- **4種類の依存関係**: FS（終了→開始）、SS（開始→開始）、FF（終了→終了）、SF（開始→終了）
+- **循環依存検出**: 無効な依存関係を自動検出・阻止
+
+#### スケジュール計算エンジン
+- **CPM（クリティカルパス法）**: Forward Passによる最早開始・終了日計算
+- **営業日計算**: 土日を除外した営業日ベースでの計算
+- **稼働率考慮**: メンバーの稼働率を考慮した実際の所要日数計算
+- **制約条件対応**: 最早開始日、デッドラインなどの制約を考慮
+
+### データ構造
+
+#### 主要エンティティ
+- **Employee**: 社員マスタ（名前、メール、稼働時間）
+- **Project**: プロジェクト（名前、期間、予算、マネージャー）
+- **ProjectMember**: プロジェクト参加者（役割、稼働率、参加期間）
+- **Task**: タスク（名前、工数、期間、座標、マイルストーン）
+- **TaskDependency**: タスク依存関係
+- **TaskChecklist**: チェックリスト項目
+
+## トラブルシューティング
+
+### よくある問題と解決法
+
+#### Python関連エラー
+
+**Python 3.13でのエラー**
 ```bash
 # 症状: psycopg2-binary, pydantic-core のビルドエラー
-# 解決: Python 3.11を使用
-unset PYENV_VERSION
+# 解決方法:
+pyenv install 3.11.10
 pyenv local 3.11.10
+unset PYENV_VERSION
 ```
 
-**2. 依存関係インストールエラー**
+**依存関係エラー**
 ```bash
-# email-validator不足
+# email-validator不足の場合
 pip install email-validator
 
-# 仮想環境再作成
+# 仮想環境の再作成
 rm -rf venv
 python -m venv venv
 source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-### データベース関連
+#### データベース接続エラー
 
-**1. 接続エラー**
 ```bash
-# Docker コンテナ確認
+# Docker コンテナの確認
 docker ps
-docker logs project-manager-postgres-1
+docker logs project-management-app-postgres-1
 
-# コンテナ再起動
+# コンテナの再起動
 docker-compose down
 docker-compose up -d
+
+# データベースの初期化
+docker exec -it project-management-app-postgres-1 psql -U pm_user -d project_management -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 ```
 
-**2. スキーマエラー**
-```bash
-# データベースリセット
-docker exec -it project-manager-postgres-1 psql -U pm_user -d project_management -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-```
+#### フロントエンドエラー
 
-### フロントエンド関連
-
-**1. TypeScript警告**
 ```bash
-# 現在の警告は動作に影響しません
-# 必要に応じて ESLint 設定を調整可能
-```
-
-**2. モジュール解決エラー**
-```bash
-# node_modules 再インストール
+# node_modules の再インストール
 rm -rf node_modules package-lock.json
 npm install
+
+# 開発サーバーの再起動
+npm start
 ```
 
-## 開発Tips
+### 動作確認
 
-### データベース管理
+#### サービス確認
+- **フロントエンド**: http://localhost:3000
+- **バックエンドAPI**: http://localhost:8000
+- **API仕様（Swagger）**: http://localhost:8000/docs
 
+#### データベース直接接続
 ```bash
-# データベース直接接続
-docker exec -it project-manager-postgres-1 psql -U pm_user -d project_management
+docker exec -it project-management-app-postgres-1 psql -U pm_user -d project_management
 
 # テーブル一覧確認
 \dt
 
-# サンプルクエリ
+# サンプルデータ確認
 SELECT * FROM employee;
-SELECT * FROM code_master;
+SELECT * FROM project;
 ```
 
-### APIテスト
+### テストデータの投入
+アプリケーション起動時に以下のサンプルデータが自動投入されます：
+- **社員**: 田中太郎、佐藤花子、鈴木一郎
+- **コードマスタ**: ステータス（未着手/進行中/完了）、優先度（高/中/低）
 
-```bash
-# 社員一覧取得
-curl http://localhost:8000/api/employees
-
-# プロジェクト一覧取得
-curl http://localhost:8000/api/projects
-```
-
-### ログ確認
-
-```bash
-# バックエンドログ: コンソール出力を確認
-# フロントエンドログ: ブラウザのDeveloper Tools > Console
-
-# PostgreSQLログ
-docker logs project-manager-postgres-1
-```
-
-## プロジェクト停止
-
-```bash
-# フロントエンド停止: Ctrl+C
-# バックエンド停止: Ctrl+C
-
-# PostgreSQL コンテナ停止
-docker-compose down
-
-# ボリュームも削除（データ初期化）
-docker-compose down -v
-```
-
-## 今後の開発拡張ポイント
-
-### 実装済み機能
-- プロジェクト・社員・タスクの基本CRUD
-- WBS画面でのチェックリスト管理
-- PERT図での依存関係作成・編集
-- 簡易版スケジュール自動算出
-- チェックリスト進捗率可視化
-
-### 拡張予定機能
-- **ガントチャート表示**: 視覚的なスケジュール管理
-- **詳細なCPM実装**: Backward Pass、フロート時間計算
-- **リソース制約対応**: 社員の作業可能時間を考慮
-- **進捗実績管理**: 実績工数・進捗率の手動入力
-- **レポート機能**: プロジェクト進捗レポート
-- **認証・権限管理**: ユーザー認証とアクセス制御
-- **通知機能**: デッドライン警告
-
-## ファイル構成
-
-```
-project-management-app/
-├── backend/
-│   ├── main.py                 # FastAPI メインアプリ
-│   ├── models/
-│   │   ├── database.py         # SQLAlchemy モデル
-│   │   └── schemas.py          # Pydantic スキーマ
-│   ├── requirements.txt        # Python 依存関係
-│   └── .env                   # 環境変数
-├── frontend/
-│   ├── src/
-│   │   ├── components/         # React コンポーネント
-│   │   ├── pages/             # ページコンポーネント
-│   │   ├── types/             # TypeScript 型定義
-│   │   ├── utils/             # ユーティリティ関数
-│   │   ├── App.tsx            # メインアプリ
-│   │   └── index.tsx          # エントリーポイント
-│   ├── public/
-│   ├── package.json           # Node.js 依存関係
-│   └── tsconfig.json          # TypeScript 設定
-└── docker-compose.yml         # PostgreSQL コンテナ設定
-```
-
-## ライセンス
-
-このプロジェクトはMITライセンスの下でライセンスされています。
+本格的な運用前に、これらのサンプルデータを削除し、実際のデータに置き換えてください。
 
 ================================================================================
 
